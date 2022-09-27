@@ -8,21 +8,23 @@ import {
 import { fromEvent, Observable } from 'rxjs';
 import { debounceTime, startWith, tap } from 'rxjs/operators';
 import * as THREE from 'three';
+import { Camera, Renderer, Scene, WebGLRenderer } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
-import * as InitialCF from '../config_three';
+import * as InitialCF from '../config';
 
 const { fov, aspect, near, far } = InitialCF.CAMERA_CF;
 
 /**
+ * Tutorial basic THREE usage
  * @link https://www.youtube.com/watch?v=xJAfLdUgdc4
  */
 @Component({
-  selector: 'my-app',
+  selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css'],
 })
 export class AppComponent implements OnInit, AfterViewInit {
-  @ViewChild('webglStuff', { static: true }) webglEl: ElementRef;
+  @ViewChild('webglStuff', { static: true }) webglEl!: ElementRef;
   renderer = new THREE.WebGLRenderer();
   scene = new THREE.Scene();
   camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
@@ -38,7 +40,7 @@ export class AppComponent implements OnInit, AfterViewInit {
     })
   );
 
-  constructor() {}
+  constructor() { }
 
   resizeUpdate() {
     this.camera.aspect = window.innerWidth / window.innerHeight;
@@ -55,7 +57,7 @@ export class AppComponent implements OnInit, AfterViewInit {
     this.createStuff(this.renderer, this.camera, this.scene);
   }
 
-  setScene(camera, orbit) {
+  setScene(camera: Camera, orbit: OrbitControls) {
     const { x, y, z } = InitialCF.cameraInital;
     camera.position.set(x, y, z);
     orbit.update();
@@ -96,22 +98,27 @@ export class AppComponent implements OnInit, AfterViewInit {
     // this.scene.add(dLisghtShadowHelper);
   }
 
-  createStuff(renderer, camera, scene) {
+  createStuff(renderer: WebGLRenderer, camera: Camera, scene: Scene) {
     const box = this.createBox(0x00ff00);
     const plane = this.createPlane(0xffffff);
     const sphere = this.createSphere(0x3b7eff);
+    const torus = this.createTorus(0x2b7fff);
 
     scene.add(box);
     scene.add(plane);
     scene.add(sphere);
+    scene.add(torus);
 
     plane.rotation.x = -0.5 * Math.PI;
     plane.receiveShadow = true;
     sphere.position.set(-6, 4, 0);
     sphere.castShadow = true;
     box.position.y = 1;
+    torus.position.set(6, 11, 2)
+    torus.rotation.y = -1.4 * Math.PI;
+    torus.rotation.x = 0.2 * Math.PI;
 
-    const animate = function (time) {
+    const animate = function (time: number) {
       box.rotation.z = time / 1000;
       box.rotation.x = time / 1000;
 
@@ -121,13 +128,13 @@ export class AppComponent implements OnInit, AfterViewInit {
     renderer.setAnimationLoop(animate);
   }
 
-  createBox(color) {
+  createBox(color: number) {
     const boxGeometry = new THREE.BoxGeometry(1, 1, 1);
     const boxMaterial = new THREE.MeshBasicMaterial({ color });
     return new THREE.Mesh(boxGeometry, boxMaterial);
   }
 
-  createPlane(color) {
+  createPlane(color: number) {
     const planeGeometry = new THREE.PlaneGeometry(30, 30);
     const planeMaterial = new THREE.MeshStandardMaterial({
       color,
@@ -136,7 +143,7 @@ export class AppComponent implements OnInit, AfterViewInit {
     return new THREE.Mesh(planeGeometry, planeMaterial);
   }
 
-  createSphere(color) {
+  createSphere(color: number) {
     const sphereGeometry = new THREE.SphereGeometry(4, 20, 20);
     const sphereMaterial = new THREE.MeshPhongMaterial({
       color,
@@ -146,6 +153,14 @@ export class AppComponent implements OnInit, AfterViewInit {
       wireframe: false,
     });
     return new THREE.Mesh(sphereGeometry, sphereMaterial);
+  }
+
+  createTorus(color: number) {
+    const TorusGeometry = new THREE.TorusGeometry(4, 1, 5, 10);
+    const torusMaterial = new THREE.PointsMaterial({
+      color,
+    })
+    return new THREE.Mesh(TorusGeometry, torusMaterial);
   }
 
   ngAfterViewInit() {
