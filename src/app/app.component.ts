@@ -8,7 +8,7 @@ import {
 import { fromEvent, Observable } from 'rxjs';
 import { debounceTime, startWith, tap } from 'rxjs/operators';
 import * as THREE from 'three';
-import { Camera, Renderer, Scene, WebGLRenderer } from 'three';
+import { Camera, Clock, Renderer, Scene, WebGLRenderer } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import * as InitialCF from '../config';
 
@@ -63,6 +63,7 @@ export class AppComponent implements OnInit, AfterViewInit {
     orbit.update();
     this.setLightning();
     this.renderer.shadowMap.enabled = true;
+    this.renderer.setClearColor(new THREE.Color('#21282a'), 1)
   }
 
   setLightning() {
@@ -104,10 +105,34 @@ export class AppComponent implements OnInit, AfterViewInit {
     const sphere = this.createSphere(0x3b7eff);
     const torus = this.createTorus(0x2b7fff);
 
+    const loader = new THREE.TextureLoader()
+    const cross = loader.load('./assets/img/crit.png')
+    
+    const partcilesMat = new THREE.PointsMaterial({
+      size: 1.5,
+      map: cross,
+      transparent: true,
+      color: 'darkcyan',
+      blending: THREE.AdditiveBlending
+    })
+    const particlesGeometry = new THREE.BufferGeometry;
+    const particlesCnt = 3000;
+
+    const posArray = new Float32Array(particlesCnt * 3)
+
+    for(let i = 0; i < particlesCnt * 3; i++) {
+      // posArray[i] = Math.random();
+      posArray[i] = (Math.random() - 0.7) * ( Math.random() * 50);
+    }
+
+    particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+
+    const particlesMesh = new THREE.Points(particlesGeometry, partcilesMat)
+
     scene.add(box);
     scene.add(plane);
     scene.add(sphere);
-    scene.add(torus);
+    scene.add(torus, particlesMesh);
 
     plane.rotation.x = -0.5 * Math.PI;
     plane.receiveShadow = true;
@@ -121,6 +146,9 @@ export class AppComponent implements OnInit, AfterViewInit {
     const animate = function (time: number) {
       box.rotation.z = time / 1000;
       box.rotation.x = time / 1000;
+
+      torus.rotation.y = time / 1000;
+      // particlesMesh.rotation.y = time / 1000;
 
       renderer.render(scene, camera);
     };
@@ -158,9 +186,22 @@ export class AppComponent implements OnInit, AfterViewInit {
   createTorus(color: number) {
     const TorusGeometry = new THREE.TorusGeometry(4, 1, 5, 10);
     const torusMaterial = new THREE.PointsMaterial({
-      color,
+      // color,
+      transparent: true,
+      size: 0.005
     })
-    return new THREE.Mesh(TorusGeometry, torusMaterial);
+    return new THREE.Points(TorusGeometry, torusMaterial);
+  }
+
+  tick(clock: Clock) {
+    const elapsedTime = clock.getElapsedTime()
+    // box.rotation.z = time / 1000;
+    // box.rotation.x = time / 1000;
+
+    // torus.rotation.y = time / 1000;
+
+    // renderer.render(scene, camera);
+    // window.requestAnimationFrame(this.tick)
   }
 
   ngAfterViewInit() {
@@ -168,6 +209,10 @@ export class AppComponent implements OnInit, AfterViewInit {
   }
 
   ngOnInit() {
+    /** @Todo move animation request in clock function */
+    // const clock = new THREE.Clock()
+    // this.tick(clock);
+
     /** //Original stuff
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
