@@ -31,6 +31,8 @@ export class AppComponent implements OnInit, AfterViewInit {
   ambientLight = new THREE.AmbientLight(0x333333);
   directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
   spotlight = new THREE.SpotLight(0xffffff, 0.8);
+  particlesCnt = 5000;
+  posArray = new Float32Array(this.particlesCnt * 3);
 
   resize$ = fromEvent(window, 'resize').pipe(
     startWith(true),
@@ -54,7 +56,7 @@ export class AppComponent implements OnInit, AfterViewInit {
     this.setDebugger();
     this.setScene(this.camera, orbit);
     this.webglEl.nativeElement.appendChild(this.renderer.domElement);
-    this.createStuff(this.renderer, this.camera, this.scene);
+    this.createStuff();
   }
 
   setScene(camera: Camera, orbit: OrbitControls) {
@@ -99,70 +101,77 @@ export class AppComponent implements OnInit, AfterViewInit {
     // this.scene.add(dLisghtShadowHelper);
   }
 
-  createStuff(renderer: WebGLRenderer, camera: Camera, scene: Scene) {
-    const box = this.createBox(0x00ff00);
+  createStuff() {
     const plane = this.createPlane(0xffffff);
-    const sphere = this.createSphere(0x3b7eff);
-    const torus = this.createTorus(0x2b7fff);
 
-    const loader = new THREE.TextureLoader();
-    const cross = loader.load('./assets/img/crit.png');
+    // const loader = new THREE.TextureLoader();
+    // const cross = loader.load('./assets/img/crit.png');
 
-    const partcilesMat = new THREE.PointsMaterial({
-      size: 1.5,
-      map: cross,
-      transparent: true,
-      color: 'white',
-      blending: THREE.AdditiveBlending,
-    });
-    const particlesGeometry = new THREE.BufferGeometry();
-    const particlesCnt = 3000;
+    // const partcilesMat = new THREE.PointsMaterial({
+    //   size: 1.5,
+    //   map: cross,
+    //   transparent: true,
+    //   color: 'white',
+    //   blending: THREE.AdditiveBlending,
+    // });
+    // const particlesGeometry = new THREE.BufferGeometry();
 
-    const posArray = new Float32Array(particlesCnt * 3);
+    // for (let i = 0; i < this.particlesCnt * 3; i++) {
 
-    for (let i = 0; i < particlesCnt * 3; i++) {
-      // posArray[i] = Math.random();
-      posArray[i] = (Math.random() - 0.7) * (Math.random() * 50);
-    }
+    //   this.posArray[3 * i] = Math.random();
+    //   this.posArray[3 * i + 1] = (Math.random() - 0.7) * (Math.random() * 50);
+    //   this.posArray[3 * i + 2] = (Math.random() - 0.7) * (Math.random() * 50);
 
-    particlesGeometry.addAttribute(
-      'position',
-      new THREE.BufferAttribute(posArray, 3)
-    );
+    //   //his.positions[3 * index] = x + spread * Math.cos(angle);
+    //   // this.positions[3 * index + 1] = y + spread * Math.sin(angle);
+    //   // this.positions[3 * index + 2] = AMBIENT.minimumZPosition * Math.random()
+    // }
 
-    const particlesMesh = new THREE.Points(particlesGeometry, partcilesMat);
+    // particlesGeometry.addAttribute(
+    //   'position',
+    //   new THREE.BufferAttribute(this.posArray, 3)
+    // );
 
-    scene.add(box);
-    scene.add(plane);
-    scene.add(sphere);
-    scene.add(torus, particlesMesh);
+    //const particlesMesh = new THREE.Points(particlesGeometry, partcilesMat);
+
+    const geometry = new THREE.BufferGeometry();
+    // create a simple square shape. We duplicate the top left and bottom right
+    // vertices because each vertex needs to appear once per triangle.
+    const vertices = new Float32Array([
+      -1.0, -1.0, 1.0, 1.0, -1.0, 1.0, 1.0, 1.0, 1.0,
+
+      1.0, 1.0, 1.0, -1.0, 1.0, 1.0, -1.0, -1.0, 1.0,
+    ]);
+
+    // itemSize = 3 because there are 3 values (components) per vertex
+    geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+    const material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+    const mesh = new THREE.Mesh(geometry, material);
+
+    // scene.add(plane);
+    this.scene.add(mesh);
 
     plane.rotation.x = -0.5 * Math.PI;
     plane.receiveShadow = true;
-    sphere.position.set(-6, 4, 0);
-    sphere.castShadow = true;
-    box.position.y = 1;
-    torus.position.set(6, 11, 2);
-    torus.rotation.y = -1.4 * Math.PI;
-    torus.rotation.x = 0.2 * Math.PI;
 
-    const animate = function (time: number) {
-      box.rotation.z = time / 1000;
-      box.rotation.x = time / 1000;
-
-      torus.rotation.y = time / 1000;
-      // particlesMesh.rotation.y = time / 1000;
-
-      renderer.render(scene, camera);
+    const animate = (time: number) => {
+      this.renderParticles(time);
+      this.renderer.render(this.scene, this.camera);
     };
 
-    renderer.setAnimationLoop(animate);
+    this.renderer.setAnimationLoop(animate);
   }
 
-  createBox(color: number) {
-    const boxGeometry = new THREE.BoxGeometry(1, 1, 1);
-    const boxMaterial = new THREE.MeshBasicMaterial({ color });
-    return new THREE.Mesh(boxGeometry, boxMaterial);
+  renderParticles(time) {
+    for (let i = 0; i < this.particlesCnt * 3; i++) {
+      // this.posArray[3 * i] = Math.random();
+      // this.posArray[3 * i + 1] = (Math.random() - 0.7) * (Math.random() * 50);
+      // this.posArray[3 * i + 2] = (Math.random() - 0.7) * (Math.random() * 50);
+
+      this.posArray[3 * i] = 45 * Math.cos(45);
+      this.posArray[3 * i + 1] = 50 * Math.sin(45);
+      this.posArray[3 * i + 2] = -100 * Math.random();
+    }
   }
 
   createPlane(color: number) {
@@ -174,68 +183,9 @@ export class AppComponent implements OnInit, AfterViewInit {
     return new THREE.Mesh(planeGeometry, planeMaterial);
   }
 
-  createSphere(color: number) {
-    const sphereGeometry = new THREE.SphereGeometry(4, 20, 20);
-    const sphereMaterial = new THREE.MeshPhongMaterial({
-      color,
-      shininess: 400,
-      // reflectivity: 150,
-      side: THREE.DoubleSide,
-      wireframe: false,
-    });
-    return new THREE.Mesh(sphereGeometry, sphereMaterial);
-  }
-
-  createTorus(color: number) {
-    const TorusGeometry = new THREE.TorusBufferGeometry(4, 1, 5, 10);
-    const torusMaterial = new THREE.PointsMaterial({
-      color,
-      transparent: true,
-      size: 0.4,
-    });
-    return new THREE.Points(TorusGeometry, torusMaterial);
-  }
-
-  tick(clock: Clock) {
-    const elapsedTime = clock.getElapsedTime();
-    // box.rotation.z = time / 1000;
-    // box.rotation.x = time / 1000;
-
-    // torus.rotation.y = time / 1000;
-
-    // renderer.render(scene, camera);
-    // window.requestAnimationFrame(this.tick)
-  }
-
   ngAfterViewInit() {
     this.start();
   }
 
-  ngOnInit() {
-    /** @Todo move animation request in clock function */
-    // const clock = new THREE.Clock()
-    // this.tick(clock);
-    /** //Original stuff
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    document.body.appendChild(renderer.domElement);
-    const geometry = new THREE.BoxGeometry(1, 1, 1);
-    const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-    const cube = new THREE.Mesh(geometry, material);
-    scene.add(cube);
-    const animate = function () {
-      requestAnimationFrame(animate);
-
-      cube.rotation.x += 0.01;
-      cube.rotation.y += 0.01;
-
-      renderer.render(scene, camera);
-    };
-    camera.position.z = 5;
-    renderer.render(scene, camera);
-    animate();
-    */
-  }
+  ngOnInit() {}
 }
